@@ -17,7 +17,7 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 from addict import Dict
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf  # 用于处理 YAML/配置对象
 
 from depth_anything_3.cfg import create_object
 from depth_anything_3.model.utils.transform import pose_encoding_to_extri_intri
@@ -32,7 +32,7 @@ from depth_anything_3.utils.alignment import (
 from depth_anything_3.utils.geometry import affine_inverse, as_homogeneous, map_pdf_to_opacity
 
 
-def _wrap_cfg(cfg_obj):
+def _wrap_cfg(cfg_obj):  # 定义内部辅助函数，把普通用对象包装成 OmegaConf 配置
     return OmegaConf.create(cfg_obj)
 
 
@@ -60,7 +60,7 @@ class DepthAnything3Net(nn.Module):
     """
 
     # Patch size for feature extraction
-    PATCH_SIZE = 14
+    PATCH_SIZE = 14   # 定义特征提取的 Patch 大小为 14（对应 DinoV2）
 
     def __init__(self, net, head, cam_dec=None, cam_enc=None, gs_head=None, gs_adapter=None):
         """
@@ -75,7 +75,7 @@ class DepthAnything3Net(nn.Module):
                 cam_dec if isinstance(cam_dec, nn.Module) else create_object(_wrap_cfg(cam_dec))
             )
             self.cam_enc = (
-                cam_enc if isinstance(cam_enc, nn.Module) else create_object(_wrap_cfg(cam_enc))
+                cam_enc if isinstance(cam_enc, nn.Module) else create_object(_wrap_cfg(cam_enc))  # 构造或直接保存 cam_enc 模块，用于把外参/内参编码成 token
             )
         self.gs_adapter, self.gs_head = None, None
         if gs_head is not None and gs_adapter is not None:
@@ -84,7 +84,7 @@ class DepthAnything3Net(nn.Module):
                 if isinstance(gs_adapter, nn.Module)
                 else create_object(_wrap_cfg(gs_adapter))
             )
-            gs_out_dim = self.gs_adapter.d_in + 1
+            gs_out_dim = self.gs_adapter.d_in + 1  # 计算 3DGS 头的输出维度（输入维度 + 1个密度通道）
             if isinstance(gs_head, nn.Module):
                 assert (
                     gs_head.out_dim == gs_out_dim
@@ -118,7 +118,7 @@ class DepthAnything3Net(nn.Module):
         """
         # Extract features using backbone
         if extrinsics is not None:
-            with torch.autocast(device_type=x.device.type, enabled=False):
+            with torch.autocast(device_type=x.device.type, enabled=False):  # 使用 autocast 上下文，但 enabled=False，显式禁止 AMP，保证相机编码在 FP32 下运行
                 cam_token = self.cam_enc(extrinsics, intrinsics, x.shape[-2:])
         else:
             cam_token = None
